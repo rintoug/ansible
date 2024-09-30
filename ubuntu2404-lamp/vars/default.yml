@@ -1,0 +1,8 @@
+mysql_root_password: "Hs75^GXpolc_rf|7j"
+app_user: "www-data"
+http_host: "dev.unitedbroadcast.com"
+http_alias: "dev.unitedbroadcast.com"
+http_conf: "dev.unitedbroadcast.com.conf"
+http_port: "80"
+doc_root: "/home/root/sites/dev.unitedbroadcast.com/html/pub"
+disable_default: true

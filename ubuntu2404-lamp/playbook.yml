@@ -1,0 +1,61 @@
+- hosts: all
+  become: true
+  vars_files:
+    - vars/default.yml
+
+  tasks:
+    - name: Install prerequisites
+      apt: name={{ item }} update_cache=yes state=latest force_apt_get=yes
+      loop: [ 'aptitude' ]
+
+  #Apache Configuration
+    - name: Add Ondrej Repository
+      apt_repository:
+        validate_certs: no
+        repo: 'ppa:ondrej/php'
+        state: present
+    - name: Install LAMP Packages
+      apt: name={{ item }} update_cache=yes state=latest
+      loop: [ 'apache2', 'php8.2', 'php8.2-fpm','php8.2-gd','php8.2-soap','php8.2-bcmath','php8.2-zip','php8.2-intl','php8.2-mbstring','php8.2-dom','php8.2-curl','php8.2-pdo-mysql' ]
+
+    - name: Create document root
+      file:
+        path: "{{ doc_root }}"
+        state: directory
+        owner: "{{ app_user }}"
+        mode: '0755'
+
+    - name: Set up Apache virtualhost
+      template:
+        src: "files/apache.conf"
+        dest: "/etc/apache2/sites-available/{{ http_conf }}"
+      notify: Reload Apache
+
+    - name: Enable new site
+      shell: /usr/sbin/a2ensite {{ http_conf }}
+      notify: Reload Apache
+
+    - name: Disable default Apache site
+      shell: /usr/sbin/a2dissite 000-default.conf
+      when: disable_default
+      notify: Reload Apache 
+
+  # PHP Info Page
+    - name: Sets Up PHP Info Page
+      template:
+        src: "files/info.php"
+        dest: "{{ doc_root}}/info.php"
+
+  handlers:
+    - name: Restart PHP FPM
+      command: service php8.2-fpm restart
+
+    - name: Reload Apache
+      service:
+        name: apache2
+        state: reloaded
+
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
